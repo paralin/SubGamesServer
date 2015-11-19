@@ -1,26 +1,25 @@
-﻿{
+{
   "version": "1.0.0-*",
-  "description": "SubGames.Server Console Application",
-  "authors": [ "kidov" ],
-  "tags": [ "" ],
-  "projectUrl": "",
+  "description": "SubGames.Server.Dota2 DOTA2 Bot Code",
+  "authors": [ "paralin" ],
+  "tags": [ "dota2" ],
+  "projectUrl": "https://gitlab.com/kidovate/subgames-server",
   "licenseUrl": "",
 
-  "compilationOptions": {
-    "emitEntryPoint": true
-  },
+  "compilationOptions": {},
 
   "dependencies": {
   },
 
   "commands": {
-    "SubGames.Server": "SubGames.Server"
   },
 
   "frameworks": {
     "dnx451": {
       "dependencies": {
-        "MongoDB.Driver": "2.1.1"
+        "Dota2": "0.6.2",
+        "MongoDB.Driver": "2.1.1",
+        "Stateless": "2.5.29"
       }
     },
     "dnxcore50": {
