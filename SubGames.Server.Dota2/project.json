@@ -18,17 +18,9 @@
     "dnx451": {
       "dependencies": {
         "Dota2": "0.6.2",
+        "log4net": "2.0.4",
         "MongoDB.Driver": "2.1.1",
         "Stateless": "2.5.29"
-      }
-    },
-    "dnxcore50": {
-      "dependencies": {
-        "Microsoft.CSharp": "4.0.1-beta-23516",
-        "System.Collections": "4.0.11-beta-23516",
-        "System.Console": "4.0.0-beta-23516",
-        "System.Linq": "4.0.1-beta-23516",
-        "System.Threading": "4.0.11-beta-23516"
       }
     }
   }

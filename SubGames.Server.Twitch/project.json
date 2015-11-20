@@ -1,0 +1,19 @@
+{
+  "version": "1.0.0-*",
+  "description": "SubGames.Server.Twitch Class Library",
+  "authors": [ "kidov" ],
+  "tags": [ "" ],
+  "projectUrl": "",
+  "licenseUrl": "",
+  "frameworks": {
+    "net451": {
+      "dependencies": {
+        "IrcDotNet": "1.0.0-*"
+      }
+    }
+  },
+  "dependencies": {
+    "log4net": "2.0.4",
+    "Stateless": "2.5.29"
+  }
+}
