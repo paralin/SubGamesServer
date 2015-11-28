@@ -1,0 +1,19 @@
+{
+  "version": "1.0.0-*",
+  "description": "SubGames.Server Runtime",
+  "authors": [ "kidov" ],
+  "tags": [ "" ],
+  "projectUrl": "",
+  "licenseUrl": "",
+  "frameworks": {
+    "dnx451": {
+      "dependencies": {
+        "log4net": "2.0.4"
+      }
+    }
+  },
+  "dependencies": {
+    "SubGames.Server.Twitch": "1.0.0-*",
+    "SubGames.Server.Dota2": "1.0.0-*"
+  }
+}

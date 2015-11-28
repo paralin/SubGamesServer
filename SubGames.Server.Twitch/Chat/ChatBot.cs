@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Timers;
+using System.Collections;
+using System.Collections.Generic;
 using IrcDotNet;
 using log4net;
 using Stateless;
@@ -41,9 +43,8 @@ namespace SubGames.Server.Twitch.Chat
 
         /// <summary>
         /// IRC Client
-        /// </summary>
-        private TwitchIrcClient Client { get; set; }
-        
+        /// </summary> private TwitchIrcClient Client { get; set; }
+
         /// <summary>
         /// Register timeout
         /// </summary>
@@ -55,10 +56,16 @@ namespace SubGames.Server.Twitch.Chat
         private AuthInfo _authInfo;
 
         /// <summary>
+        /// Current channel list
+        /// </summary>
+        private HashSet<string> _joinedChannels;
+
+        /// <summary>
         /// Create a Twitch chatbot.
         /// </summary>
         public ChatBot(AuthInfo info, int reconnectTime = 3000)
         {
+            _joinedChannels = new HashSet<string>();
             _authInfo = info;
             _shouldReconnect = reconnectTime > 0;
             if (_shouldReconnect)
@@ -168,6 +175,7 @@ namespace SubGames.Server.Twitch.Chat
         private void OnLeftChannel(object sender, IrcChannelEventArgs ircChannelEventArgs)
         {
             // Unregister the channel events
+            _joinedChannels.Remove(ircChannelEventArgs.Channel.Name);
         }
 
         /// <summary>
@@ -178,6 +186,10 @@ namespace SubGames.Server.Twitch.Chat
         private void OnJoinedChannel(object sender, IrcChannelEventArgs ircChannelEventArgs)
         {
             // Register the channel events
+            _joinedChannels.Add(ircChannelEventArgs.Channel.Name);
+
+            // Say hello
+            // Start periodic message timer (?)
         }
 
         /// <summary>
@@ -196,6 +208,7 @@ namespace SubGames.Server.Twitch.Chat
         /// <param name="ircMessageEventArgs"></param>
         private void OnNoticeReceived(object sender, IrcMessageEventArgs ircMessageEventArgs)
         {
+            _log.Debug("NOTICE: " + ircMessageEventArgs.Text);
         }
 
         /// <summary>
@@ -220,6 +233,8 @@ namespace SubGames.Server.Twitch.Chat
             Client?.Disconnect();
             Client?.Dispose();
             Client = null;
+
+            _joinedChannels.Clear();
         }
     }
 }

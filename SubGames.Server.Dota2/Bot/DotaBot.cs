@@ -103,7 +103,6 @@ namespace SubGames.Server.Dota2.Bot
         /// <param name="contrs">Game controllers</param>
         public DotaBot(SteamUser.LogOnDetails details, double reconnectDelay = 2000)
         {
-
             log = LogManager.GetLogger("Bot " + details.Username);
             log.Debug("Initializing a new LobbyBot w/username " + details.Username);
 
