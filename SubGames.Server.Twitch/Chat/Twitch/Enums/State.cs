@@ -1,4 +1,4 @@
-﻿namespace SubGames.Server.Twitch.Chat.Enums
+﻿namespace SubGames.Server.Twitch.Chat.Twitch.Enums
 {
     /// <summary>
     /// Chatbot state
@@ -30,8 +30,22 @@
         /// </summary>
         Authenticating,
 
+ #region Whisper
+
         /// <summary>
-        /// Ready to join channel / etc
+        /// Checking the whisper server
+        /// </summary>
+        TwitchGroupApi,
+
+        /// <summary>
+        /// Joining the Twitch IRC channel for the group
+        /// </summary>
+        JoiningChannel,
+
+        #endregion
+
+        /// <summary>
+        /// Ready to do whatever
         /// </summary>
         Ready
     }

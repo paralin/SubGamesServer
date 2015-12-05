@@ -1,14 +1,16 @@
 ﻿using System;
-using System.Timers;
-using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using System.Timers;
 using IrcDotNet;
 using log4net;
+using Newtonsoft.Json;
 using Stateless;
-using SubGames.Server.Twitch.Chat.Enums;
+using SubGames.Server.Twitch.Api;
+using SubGames.Server.Twitch.Chat.Twitch.Enums;
 using SubGames.Server.Twitch.Model;
 
-namespace SubGames.Server.Twitch.Chat
+namespace SubGames.Server.Twitch.Chat.Twitch
 {
     /// <summary>
     /// Twitch chatbot.
@@ -24,12 +26,32 @@ namespace SubGames.Server.Twitch.Chat
         /// <summary>
         /// Running
         /// </summary>
-        private bool _running = false;
+        private bool _running;
 
         /// <summary>
         /// Invalid credentials event
         /// </summary>
         public event EventHandler InvalidCreds;
+
+        /// <summary>
+        /// When ready
+        /// </summary>
+        public event EventHandler Ready;
+
+        /// <summary>
+        /// Not ready
+        /// </summary>
+        public event EventHandler Unready;
+
+        /// <summary>
+        /// Message received in an irc channel
+        /// </summary>
+        public event EventHandler<IrcMessageEventArgs> MessageReceived;
+
+        /// <summary>
+        /// State of the bot
+        /// </summary>
+        public State State => _stateMachine.State;
 
         /// <summary>
         /// Reconnect timer
@@ -43,7 +65,8 @@ namespace SubGames.Server.Twitch.Chat
 
         /// <summary>
         /// IRC Client
-        /// </summary> private TwitchIrcClient Client { get; set; }
+        /// </summary>
+        public TwitchIrcClient Client { get; private set; }
 
         /// <summary>
         /// Register timeout
@@ -61,16 +84,27 @@ namespace SubGames.Server.Twitch.Chat
         private HashSet<string> _joinedChannels;
 
         /// <summary>
+        /// Target group chat room
+        /// </summary>
+        public TwitchChatRoom GroupChatRoom { get; private set; }
+
+        /// <summary>
+        /// Is this a whisper client?
+        /// </summary>
+        public bool WhisperClient { get; private set; }
+
+        /// <summary>
         /// Create a Twitch chatbot.
         /// </summary>
-        public ChatBot(AuthInfo info, int reconnectTime = 3000)
+        public ChatBot(AuthInfo info, bool whisper, int reconnectTime = 3000)
         {
+            WhisperClient = whisper;
             _joinedChannels = new HashSet<string>();
             _authInfo = info;
             _shouldReconnect = reconnectTime > 0;
             if (_shouldReconnect)
             {
-                _reconnectTimer = new System.Timers.Timer(reconnectTime);
+                _reconnectTimer = new Timer(reconnectTime);
                 _reconnectTimer.Elapsed += (sender, args) =>
                 {
                     _reconnectTimer.Stop();
@@ -91,13 +125,19 @@ namespace SubGames.Server.Twitch.Chat
                 .SubstateOf(State.Conceived)
                 .Ignore(Trigger.Disconnected)
                 .OnEntryFrom(Trigger.AuthInvalid, () => InvalidCreds?.Invoke(this, EventArgs.Empty))
-                .PermitIf(Trigger.ConnectRequested, State.Twitch, () => _running);
+                .PermitIf(Trigger.ConnectRequested, whisper ? State.TwitchGroupApi : State.Authenticating, () => _running);
 
             _state.Configure(State.RetryConnection)
                 .SubstateOf(State.SignedOff)
                 .OnExit(() => _reconnectTimer.Stop())
                 .OnEntry(() => _reconnectTimer.Start())
-                .Permit(Trigger.ConnectRequested, State.Twitch);
+                .PermitDynamic(Trigger.ConnectRequested, () => whisper ? State.TwitchGroupApi : State.Twitch);
+
+            _state.Configure(State.TwitchGroupApi)
+                .SubstateOf(State.Conceived)
+                .OnEntry(CheckGroupApi)
+                .Permit(Trigger.ApiCheckFailed, State.RetryConnection)
+                .Permit(Trigger.GroupInfoReceived, State.Authenticating);
 
             _state.Configure(State.Twitch)
                 .SubstateOf(State.Conceived)
@@ -115,7 +155,28 @@ namespace SubGames.Server.Twitch.Chat
                 .Permit(Trigger.AuthInvalid, State.SignedOff);
 
             _state.Configure(State.Ready)
-                .SubstateOf(State.Twitch);
+                .SubstateOf(State.Twitch)
+                .OnEntry(() => Ready?.Invoke(this, EventArgs.Empty))
+                .OnExit(() => Unready?.Invoke(this, EventArgs.Empty));
+        }
+
+
+        public void Start()
+        {
+            if (!_running)
+            {
+                _running = true;
+                _stateMachine.Fire(Trigger.ConnectRequested);
+            }
+        }
+
+        public void Stop()
+        {
+            if (_running)
+            {
+                _running = false;
+                _stateMachine.Fire(Trigger.DisconnectRequested);
+            }
         }
 
         /// <summary>
@@ -123,20 +184,28 @@ namespace SubGames.Server.Twitch.Chat
         /// </summary>
         private void InitializeTwitchConnection()
         {
-            var server = "irc.twitch.tv";
-            _log.Debug("Connecting to server " + server + "...");
+            string server = WhisperClient
+                ? TwitchServers.ServerClusters["group"].Servers.OrderBy(qu => Guid.NewGuid()).First().Split(':')[0] : "irc.twitch.tv";
+
+            // Temporary from chatdepot.twitch.tv
+            var chatDepotServer = GroupChatRoom?.Servers.FirstOrDefault(m => m.EndsWith("6667") && !m.StartsWith("10."));
+            if (chatDepotServer != null)
+                server = chatDepotServer.Split(':')[0];
+
+            _log.Debug("Connecting to " + (WhisperClient ? "whisper" : "normal") + " server " + server + "...");
             var client = Client = new TwitchIrcClient
             {
                 FloodPreventer = new IrcStandardFloodPreventer(4, 2000)
             };
             client.Disconnected += TwitchOnDisconnected;
+            client.ConnectFailed += TwitchOnDisconnected;
             client.Registered += TwitchOnRegistered;
             client.Connected += (sender, args) => _log.Debug("Connected, awaiting registration...");
             client.Connect(server, false, new IrcUserRegistrationInfo()
             {
-                NickName = _authInfo.Username,
+                NickName = _authInfo.Username.ToLower(),
                 Password = _authInfo.Password,
-                UserName = _authInfo.Username
+                UserName = _authInfo.Username.ToLower()
             });
             RegisterTimeout = new Timer(10000);
             RegisterTimeout.Elapsed += (sender, args) =>
@@ -155,16 +224,26 @@ namespace SubGames.Server.Twitch.Chat
         /// <param name="eventArgs"></param>
         private void TwitchOnRegistered(object sender, EventArgs eventArgs)
         {
+            _log.Debug("Registered successfully.");
+
             RegisterTimeout?.Dispose();
             RegisterTimeout = null;
 
-            _log.Debug("Registered successfully.");
             _stateMachine.Fire(Trigger.SignedIn);
 
             Client.LocalUser.NoticeReceived += OnNoticeReceived;
-            Client.LocalUser.MessageReceived += OnMessageReceived;
+            Client.LocalUser.MessageReceived += (o, args) => OnMessageReceived(o, args);
             Client.LocalUser.JoinedChannel += OnJoinedChannel;
             Client.LocalUser.LeftChannel += OnLeftChannel;
+
+            _log.Debug("Initializing twitch membership capability...");
+            Client.SendRawMessage("CAP REQ :twitch.tv/membership");
+            Client.SendRawMessage("CAP REQ :twitch.tv/commands");
+
+            if (!WhisperClient)
+                Client.SendRawMessage("JOIN #quantumdota");
+            else
+                JoinGroupChannel();
         }
 
         /// <summary>
@@ -185,11 +264,29 @@ namespace SubGames.Server.Twitch.Chat
         /// <param name="ircChannelEventArgs"></param>
         private void OnJoinedChannel(object sender, IrcChannelEventArgs ircChannelEventArgs)
         {
+            _log.Debug("Joined channel " + ircChannelEventArgs.Channel.Name + "...");
+
             // Register the channel events
+            var chan = ircChannelEventArgs.Channel;
             _joinedChannels.Add(ircChannelEventArgs.Channel.Name);
+            chan.MessageReceived += (o, args) =>
+            {
+                OnMessageReceived(o, args, ircChannelEventArgs.Channel);
+                MessageReceived?.Invoke(this, args);
+            };
+            chan.NoticeReceived += OnNoticeReceived;
 
             // Say hello
+            if (!WhisperClient)
+                Client.LocalUser.SendMessage("#" + ircChannelEventArgs.Channel.Name, "Hello world");
             // Start periodic message timer (?)
+
+            // Check if joined group channel
+            if (GroupChatRoom != null && GroupChatRoom.IrcChannel == ircChannelEventArgs.Channel.Name.Substring(1))
+            {
+                // _stateMachine.Fire(Trigger.JoinedGroupChat);
+                Client.LocalUser.SendMessage("#" + GroupChatRoom.IrcChannel, ".w paralin HeyGuys");
+            }
         }
 
         /// <summary>
@@ -197,8 +294,12 @@ namespace SubGames.Server.Twitch.Chat
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="ircMessageEventArgs"></param>
-        private void OnMessageReceived(object sender, IrcMessageEventArgs ircMessageEventArgs)
+        private void OnMessageReceived(object sender, IrcMessageEventArgs ircMessageEventArgs, IrcChannel channel = null)
         {
+            if (channel == null)
+                _log.Debug(ircMessageEventArgs.Source.Name + ": " + ircMessageEventArgs.Text);
+            else
+                _log.Debug("[" + channel.Name + "] " + ircMessageEventArgs.Source.Name + ": " + ircMessageEventArgs.Text);
         }
 
         /// <summary>
@@ -220,6 +321,24 @@ namespace SubGames.Server.Twitch.Chat
         {
             _log.Debug("Disconnected from twitch.");
             _stateMachine.Fire(Trigger.Disconnected);
+        }
+
+        /// <summary>
+        /// State entry - join the group channel.
+        /// </summary>
+        private void JoinGroupChannel()
+        {
+            Client.SendRawMessage("JOIN #" + GroupChatRoom.IrcChannel);
+        }
+
+        /// <summary>
+        /// State entry - check the group chat api
+        /// </summary>
+        private void CheckGroupApi()
+        {
+            var memberships = JsonConvert.DeserializeObject<TwitchRoomMemberships>(TwitchChatDepot.GetRoomMemberships(_authInfo.Password).Content);
+            GroupChatRoom = memberships.Memberships.FirstOrDefault()?.Room;
+            _stateMachine.Fire(Trigger.GroupInfoReceived);
         }
 
         /// <summary>

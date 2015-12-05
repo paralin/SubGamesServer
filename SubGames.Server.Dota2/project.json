@@ -17,7 +17,7 @@
   "frameworks": {
     "dnx451": {
       "dependencies": {
-        "Dota2": "0.6.2",
+        "Dota2": "0.7.0",
         "log4net": "2.0.4",
         "MongoDB.Driver": "2.1.1",
         "Stateless": "2.5.29"

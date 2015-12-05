@@ -1,4 +1,4 @@
-﻿namespace SubGames.Server.Twitch.Chat.Enums
+﻿namespace SubGames.Server.Twitch.Chat.Twitch.Enums
 {
     /// <summary>
     /// Triggers
@@ -11,6 +11,9 @@
         AuthInvalid,
         AuthRetry,
         ConnectRequested,
+        ApiCheckFailed,
+        GroupInfoReceived,
+        JoinedGroupChat,
         DisconnectRequested
     }
 }

@@ -7,8 +7,8 @@
 
   <Import Project="$(VSToolsPath)\DNX\Microsoft.DNX.Props" Condition="'$(VSToolsPath)' != ''" />
   <PropertyGroup Label="Globals">
-    <ProjectGuid>dae73b19-5482-451a-9b7d-b44b247d2479</ProjectGuid>
-    <RootNamespace>SubGames.Server.Twitch</RootNamespace>
+    <ProjectGuid>82f8788d-890a-49dc-9112-796a6894d378</ProjectGuid>
+    <RootNamespace>SubGames.Server.Twitch.TestBot</RootNamespace>
     <BaseIntermediateOutputPath Condition="'$(BaseIntermediateOutputPath)'=='' ">..\..\artifacts\obj\$(MSBuildProjectName)</BaseIntermediateOutputPath>
     <OutputPath Condition="'$(OutputPath)'=='' ">..\..\artifacts\bin\$(MSBuildProjectName)\</OutputPath>
   </PropertyGroup>
