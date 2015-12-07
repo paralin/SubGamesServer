@@ -1,4 +1,4 @@
-﻿namespace SubGames.Server.Twitch.Chat.Controller
+﻿namespace SubGames.Server.Channel.Enums
 {
     public enum State
     {

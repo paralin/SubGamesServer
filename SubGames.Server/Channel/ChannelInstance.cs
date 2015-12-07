@@ -5,7 +5,7 @@ using SubGames.Server.Dota2.Bot;
 using SubGames.Server.Model;
 using SubGames.Server.Twitch.Chat.Controller;
 using SubGames.Server.Twitch.Chat.Controller.Enums;
-using State = SubGames.Server.Twitch.Chat.Controller.State;
+using State = SubGames.Server.Channel.Enums.State;
 
 namespace SubGames.Server.Channel
 {
@@ -33,6 +33,11 @@ namespace SubGames.Server.Channel
         /// State machine
         /// </summary>
         private StateMachine<State, Trigger> _state;
+
+        /// <summary>
+        /// Current state
+        /// </summary>
+        public State State => _state.State;
 
         /// <summary>
         /// Logger

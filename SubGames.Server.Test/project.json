@@ -1,0 +1,21 @@
+﻿{
+  "version": "1.0.0-*",
+  "description": "SubGames.Server.Test Class Library",
+  "authors": [ "kidov" ],
+  "tags": [ "" ],
+  "projectUrl": "",
+  "licenseUrl": "",
+  "commands": {
+    "test": "xunit.runner.dnx"
+  },
+  "frameworks": {
+    "dnx451": {}
+  },
+
+  "dependencies": {
+    "SubGames.Server": "1.0.0-*",
+    "log4net": "2.0.4",
+    "xunit": "2.1.0",
+    "xunit.runner.dnx": "2.1.0-rc1-build204"
+  }
+}

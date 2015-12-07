@@ -1,0 +1,25 @@
+﻿{
+  "version": "1.0.0-*",
+  "description": "SubGames.Server.Runtime Console Application",
+  "authors": [ "kidov" ],
+  "tags": [ "" ],
+  "projectUrl": "",
+  "licenseUrl": "",
+
+  "compilationOptions": {
+    "emitEntryPoint": true
+  },
+
+  "commands": {
+    "SubGames.Server.Runtime" : "SubGames.Server.Runtime"
+  },
+
+  "dependencies": {
+    "SubGames.Server": "",
+    "log4net": "2.0.4"
+  },
+
+  "frameworks": {
+    "dnx451": { }
+  }
+}
