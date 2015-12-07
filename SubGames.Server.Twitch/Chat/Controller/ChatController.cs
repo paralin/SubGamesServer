@@ -1,13 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-using System.Timers;
-using IrcDotNet;
 using log4net;
-using Newtonsoft.Json;
 using Stateless;
-using SubGames.Server.Twitch.Api;
+using SubGames.Server.Twitch.Chat.Controller.Enums;
 using SubGames.Server.Twitch.Chat.Twitch;
 using SubGames.Server.Twitch.Model;
 
@@ -32,12 +27,22 @@ namespace SubGames.Server.Twitch.Chat.Controller
         /// <summary>
         /// Whisper bot
         /// </summary>
-        public ChatBot Whisperer { get; private set; }
+        public ChatBot Whisperer { get; }
 
         /// <summary>
         /// Talker bot
         /// </summary>
-        public ChatBot Talker { get; private set; }
+        public ChatBot Talker { get; }
+
+        /// <summary>
+        /// Event - on ready
+        /// </summary>
+        public event EventHandler Ready;
+
+        /// <summary>
+        /// Event - on unready
+        /// </summary>
+        public event EventHandler Unready;
 
         /// <summary>
         /// State of the bot
@@ -75,7 +80,9 @@ namespace SubGames.Server.Twitch.Chat.Controller
 
             _state.Configure(State.Ready)
                 .SubstateOf(State.Conceived)
-                .Ignore(Trigger.ChatbotsReady);
+                .Ignore(Trigger.ChatbotsReady)
+                .OnEntry(() => Ready?.Invoke(this, EventArgs.Empty))
+                .OnExit(() => Unready?.Invoke(this, EventArgs.Empty));
 
             Whisperer = new ChatBot(info, true);
             Whisperer.Ready += CheckBotStates;
@@ -83,11 +90,6 @@ namespace SubGames.Server.Twitch.Chat.Controller
             Talker = new ChatBot(info, false);
             Talker.Ready += CheckBotStates;
             Talker.Unready += CheckBotStates;
-
-            Talker.MessageReceived += (sender, args) =>
-            {
-                Whisperer.Client.LocalUser.SendMessage("#" + Whisperer.GroupChatRoom.IrcChannel, ".w paralin [" + args.Source.Name + "] " + args.Text);
-            };
         }
 
         private void CheckBotStates(object sender, EventArgs eventArgs)
@@ -98,13 +100,21 @@ namespace SubGames.Server.Twitch.Chat.Controller
                 _stateMachine.Fire(Trigger.ChatbotsUnready);
         }
 
+        /// <summary>
+        /// Send a whisper to a user
+        /// </summary>
+        /// <param name="user">username of the target</param>
+        /// <param name="text">whisper message text</param>
+        public void WhisperTo(string user, string text)
+        {
+            Whisperer.Client.LocalUser.SendMessage("#" + Whisperer.GroupChatRoom.IrcChannel, ".w " + user + " " + text);
+        }
+
         public void Start()
         {
-            if (!_running)
-            {
-                _running = true;
-                _stateMachine.Fire(Trigger.ConnectRequested);
-            }
+            if (_running) return;
+            _running = true;
+            _stateMachine.Fire(Trigger.ConnectRequested);
         }
 
         public void Stop()

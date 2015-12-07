@@ -1,0 +1,17 @@
+﻿{
+  "version": "1.0.0-*",
+  "description": "SubGames.Server Console Application",
+  "authors": [ "kidov" ],
+  "tags": [ "" ],
+  "projectUrl": "",
+  "licenseUrl": "",
+
+  "dependencies": {
+    "SubGames.Server.Twitch":  "",
+    "SubGames.Server.Dota2":  ""
+  },
+
+  "frameworks": {
+    "dnx451": { }
+  }
+}

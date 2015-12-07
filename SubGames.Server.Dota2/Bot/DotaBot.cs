@@ -291,6 +291,7 @@ namespace SubGames.Server.Dota2.Bot
             DotaGcHandler = null;
         }
 
+        /*
         private void UpdatePersona()
         {
             var cname = SteamFriends.GetPersonaName();
@@ -301,7 +302,7 @@ namespace SubGames.Server.Dota2.Bot
                 SteamFriends.SetPersonaName(tname);
             }
             SteamFriends.SetPersonaState(EPersonaState.Online);
-        }
+        }*/
 
         /// <summary>
         ///     Internal thread
@@ -339,7 +340,6 @@ namespace SubGames.Server.Dota2.Bot
             cb.Add<SteamUser.AccountInfoCallback>(a =>
             {
                 log.DebugFormat("Current name is: {0}, flags {1}, ", a.PersonaName, a.AccountFlags.ToString("G"));
-                UpdatePersona();
             });
             cb.Add<SteamClient.ConnectedCallback>(a => SteamUser?.LogOn(_logonDetails));
             cb.Add<SteamClient.DisconnectedCallback>(a => _state?.Fire(Trigger.SteamDisconnected));
@@ -449,7 +449,7 @@ namespace SubGames.Server.Dota2.Bot
         public void Start()
         {
             _isRunning = true;
-            _state.Fire(Trigger.ConnectRequested);
+            Task.Run(() => _state.Fire(Trigger.ConnectRequested));
         }
 
         /// <summary>
@@ -458,7 +458,7 @@ namespace SubGames.Server.Dota2.Bot
         public void Stop()
         {
             _isRunning = false;
-            _state.Fire(Trigger.ShutdownRequested);
+            Task.Run(() => _state.Fire(Trigger.ShutdownRequested));
         }
 
         public void Dispose()

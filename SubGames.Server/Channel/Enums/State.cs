@@ -1,4 +1,4 @@
-﻿namespace SubGames.Server.Twitch.Chat.Controller.Enums
+﻿namespace SubGames.Server.Twitch.Chat.Controller
 {
     public enum State
     {
@@ -13,12 +13,12 @@
         SignedOff,
 
         /// <summary>
-        /// Waiting for Bots to connect
+        /// Waiting for ChatBots to connect
         /// </summary>
         Connecting,
 
         /// <summary>
-        /// Connected and ready.
+        /// Connected to both
         /// </summary>
         Ready
     }

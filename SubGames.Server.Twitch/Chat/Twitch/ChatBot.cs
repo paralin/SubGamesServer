@@ -233,6 +233,7 @@ namespace SubGames.Server.Twitch.Chat.Twitch
 
             Client.LocalUser.NoticeReceived += OnNoticeReceived;
             Client.LocalUser.MessageReceived += (o, args) => OnMessageReceived(o, args);
+            Client.LocalUser.MessageReceived += (o, args) => MessageReceived?.Invoke(this, args);
             Client.LocalUser.JoinedChannel += OnJoinedChannel;
             Client.LocalUser.LeftChannel += OnLeftChannel;
 
