@@ -30,7 +30,7 @@ namespace SubGames.Server.Twitch.Test
         /// <summary>
         /// The bots should connect to the server.
         /// </summary>
-        [Fact(DisplayName = "Connect"), TestPriority(0)]
+        [Fact(DisplayName = "Connect"), TestPriority(-1)]
         public void A_BotsShouldConnect()
         {
             Stopwatch startedTime = new Stopwatch();
@@ -50,8 +50,8 @@ namespace SubGames.Server.Twitch.Test
         /// <summary>
         /// Test whispering from master to slave
         /// </summary>
-        [Fact(DisplayName = "WhisperAtoB"), TestPriority(1)]
-        public void B_WhisperAtoB()
+        [Fact(DisplayName = "WhisperAtoB")]
+        public void WhisperAtoB()
         {
             bool receivedSentMessage = false;
             var slaveName = Context.Slave.Talker.Client.LocalUser.NickName;
