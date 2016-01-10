@@ -34,7 +34,8 @@ namespace SubGames.Server.Runtime
                 {
                     Username = "subgamesbot_test",
                     Password = "oauth:sx36zdj5rpbqrof40m57j8z4pucbut"
-                }
+                },
+                OwnerSteamId = 76561198029304414
             });
             channel.Start();
             Thread.Sleep(Timeout.InfiniteTimeSpan);

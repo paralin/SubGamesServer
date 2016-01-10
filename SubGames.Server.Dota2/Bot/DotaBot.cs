@@ -67,6 +67,21 @@ namespace SubGames.Server.Dota2.Bot
         /// </summary>
         public event EventHandler InvalidCreds;
 
+        /// <summary>
+        /// Lobby invite received
+        /// </summary>
+        public event EventHandler<CSODOTALobbyInvite> LobbyInviteReceived;
+
+        /// <summary>
+        /// Party invite received
+        /// </summary>
+        public event EventHandler<CSODOTAPartyInvite> PartyInviteReceived;
+
+        /// <summary>
+        /// Joined lobby chat
+        /// </summary>
+        public event EventHandler JoinedLobbyChat;
+
         #endregion
 
         #region Private
@@ -201,6 +216,11 @@ namespace SubGames.Server.Dota2.Bot
         }
 
         /// <summary>
+        /// Check if we are the lobby host
+        /// </summary>
+        public bool IsLobbyHost => DotaGcHandler.Lobby?.leader_id == SteamClient.SteamID.ConvertToUInt64();
+
+        /// <summary>
         ///     Join the lobby chat channel
         /// </summary>
         private void JoinLobbyChat()
@@ -291,9 +311,9 @@ namespace SubGames.Server.Dota2.Bot
             DotaGcHandler = null;
         }
 
-        /*
         private void UpdatePersona()
         {
+            /*
             var cname = SteamFriends.GetPersonaName();
             var tname = "FACEIT.com Bot";
             if (cname != tname)
@@ -301,8 +321,9 @@ namespace SubGames.Server.Dota2.Bot
                 log.DebugFormat("Changed persona name to {0} from {1}.", tname, cname);
                 SteamFriends.SetPersonaName(tname);
             }
+            */
             SteamFriends.SetPersonaState(EPersonaState.Online);
-        }*/
+        }
 
         /// <summary>
         ///     Internal thread
@@ -340,6 +361,7 @@ namespace SubGames.Server.Dota2.Bot
             cb.Add<SteamUser.AccountInfoCallback>(a =>
             {
                 log.DebugFormat("Current name is: {0}, flags {1}, ", a.PersonaName, a.AccountFlags.ToString("G"));
+                UpdatePersona();
             });
             cb.Add<SteamClient.ConnectedCallback>(a => SteamUser?.LogOn(_logonDetails));
             cb.Add<SteamClient.DisconnectedCallback>(a => _state?.Fire(Trigger.SteamDisconnected));
@@ -394,7 +416,10 @@ namespace SubGames.Server.Dota2.Bot
             {
                 if (DotaGcHandler.Lobby != null && a.result.channel_id != 0 &&
                     a.result.channel_name == "Lobby_" + DotaGcHandler.Lobby.lobby_id)
+                {
                     _lobbyChannelId = a.result.channel_id;
+                    JoinedLobbyChat?.Invoke(this, EventArgs.Empty);
+                }
             });
             cb.Add<DotaGCHandler.ChatMessage>(
                 a =>
@@ -403,7 +428,6 @@ namespace SubGames.Server.Dota2.Bot
                                     (a.result.channel_id == _lobbyChannelId ? "Lobby" : a.result.channel_id + "") + "] " +
                                     a.result.persona_name + ": " + a.result.text);
                     if (a.result.channel_id != _lobbyChannelId) return;
-                    if (a.result.text.Contains("!start")) DotaGcHandler.LaunchLobby();
                 });
             cb.Add<DotaGCHandler.MatchResultResponse>(c =>
             {
@@ -414,6 +438,14 @@ namespace SubGames.Server.Dota2.Bot
                 _callbacks.Remove(id);
                 log.Warn("Match result response for " + id + ": " + ((EResult)c.result.result).ToString("G"));
                 cbx(c.result.match);
+            });
+            cb.Add<DotaGCHandler.LobbyInviteSnapshot>(c =>
+            {
+                LobbyInviteReceived?.Invoke(this, c.invite);
+            });
+            cb.Add<DotaGCHandler.PartyInviteSnapshot>(c =>
+            {
+                PartyInviteReceived?.Invoke(this, c.invite);
             });
         }
 
@@ -485,8 +517,12 @@ namespace SubGames.Server.Dota2.Bot
             DotaGcHandler.RequestMatchResult(matchId);
         }
 
-        public void LeaveLobby()
+        public void LeaveLobby(bool kickEveryone = false)
         {
+            if (kickEveryone && DotaGcHandler.Lobby != null)
+                foreach (var pm in DotaGcHandler.Lobby.members)
+                    DotaGcHandler.KickPlayerFromLobby(new SteamID(pm.id).AccountID);
+
             DotaGcHandler.AbandonGame();
             DotaGcHandler.LeaveLobby();
         }

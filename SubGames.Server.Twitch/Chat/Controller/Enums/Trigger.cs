@@ -5,6 +5,13 @@
         ConnectRequested,
         DisconnectRequested,
         ChatbotsReady,
-        ChatbotsUnready
+        ChatbotsUnready,
+
+        LobbyRequested,
+        DotaEnteredLobby,
+        DotaLostLobby,
+        DotaEnteredPlay,
+        LobbyBecameOwner,
+        LobbyDeleteRequsted
     }
 }

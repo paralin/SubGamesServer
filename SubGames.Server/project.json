@@ -1,4 +1,4 @@
-﻿{
+{
   "version": "1.0.0-*",
   "description": "SubGames.Server Console Application",
   "authors": [ "kidov" ],
@@ -7,8 +7,9 @@
   "licenseUrl": "",
 
   "dependencies": {
-    "SubGames.Server.Twitch":  "",
-    "SubGames.Server.Dota2":  ""
+    "SubGames.Server.Twitch": "",
+    "SubGames.Server.Dota2": "",
+    "CompareNETObjects": "3.3.0"
   },
 
   "frameworks": {

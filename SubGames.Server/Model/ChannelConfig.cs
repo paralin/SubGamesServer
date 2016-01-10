@@ -22,5 +22,10 @@ namespace SubGames.Server.Model
         /// Channel name
         /// </summary>
         public string Channel { get; set; }
+
+        /// <summary>
+        /// Channel owner steam ID
+        /// </summary>
+        public ulong OwnerSteamId { get; set; }
     }
 }
